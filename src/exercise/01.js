@@ -3,10 +3,10 @@
 
 import * as React from 'react';
 
-const countReducer = (state, newState) =>
-  typeof newState === 'function'
-    ? {...state, ...newState(state.count)}
-    : {...state, ...newState};
+const countReducer = (state, newState) => ({
+  ...state,
+  ...(typeof newState === 'function' ? newState(state.count) : newState),
+});
 
 function Counter({initialCount = 0, step = 1}) {
   // 🐨 replace React.useState with React.useReducer.
