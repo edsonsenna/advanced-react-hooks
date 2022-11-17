@@ -27,7 +27,7 @@ function asyncReducer(_, action) {
   }
 }
 
-function useAsync(asyncCallback, initialState) {
+function useAsync(initialState) {
   const [state, dispatch] = React.useReducer(asyncReducer, {
     status: 'idle',
     data: null,
@@ -35,9 +35,7 @@ function useAsync(asyncCallback, initialState) {
     ...initialState,
   });
 
-  React.useEffect(() => {
-    const promise = asyncCallback();
-
+  const run = React.useCallback(promise => {
     if (!promise) {
       return;
     }
@@ -47,26 +45,25 @@ function useAsync(asyncCallback, initialState) {
     promise
       .then(data => dispatch({type: 'resolved', data}))
       .catch(error => dispatch({type: 'reject', error}));
+  }, []);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [asyncCallback]);
-
-  return state;
+  return {...state, run};
 }
 
 function PokemonInfo({pokemonName}) {
-  const asyncCallback = React.useCallback(() => {
-    if (!pokemonName) {
-      return;
-    }
-    return fetchPokemon(pokemonName);
-  }, [pokemonName]);
-  const state = useAsync(asyncCallback, {
+  const {data, status, error, run} = useAsync({
     status: 'idle',
     data: null,
     error: null,
   });
-  const {data, status, error} = state;
+
+  React.useEffect(() => {
+    if (!pokemonName) {
+      return;
+    }
+    const pokemonPromise = fetchPokemon(pokemonName);
+    run(pokemonPromise);
+  }, [pokemonName, run]);
 
   switch (status) {
     case 'idle':
